@@ -5,7 +5,7 @@ import json
 import random
 
 class NetworkInfo:
-    num_inputs = 2
+    num_inputs = 64
     num_hidden = 5
     num_outputs = 1
 
@@ -18,14 +18,32 @@ class NetworkInfo:
 
     is_read_file_error = False
 
+    training_sets = []
+
     def __init__(self, is_train=False):
-        self.training_sets = [
-            [[0, 0], [0]],
-            [[0, 1], [1]],
-            [[1, 0], [1]],
-            [[1, 1], [0]]
-        ]
+        # self.training_sets = [
+        #     [[0, 0], [0]],
+        #     [[0, 1], [1]],
+        #     [[1, 0], [1]],
+        #     [[1, 1], [0]]
+        # ]
+        self.get_training_sets()
+        print(self.training_sets)
         self.get_network_from_file(is_train)
+    
+    def get_training_sets(self):
+        records = models.Images().get_thematic_training_set()
+        print(len(records))
+        for index, record in enumerate(records):
+            # if index == 10:
+            #     break
+            row = []
+            hash_array = []
+            for hash in record.image_hash:
+                hash_array.append(int(hash))
+            row.append(hash_array)
+            row.append([1/record.album_id])
+            self.training_sets.append(row)
 
     def get_network_from_file(self, is_train=False):
         network = None
@@ -57,6 +75,7 @@ class NetworkInfo:
 
 def train(epsilon=0.0001):
     network = NetworkInfo(is_train=True)
+    print('networ is get')
     nn = neural_network.NeuralNetwork(
         num_inputs = network.num_inputs, 
         num_hidden = network.num_hidden, 
@@ -71,6 +90,7 @@ def train(epsilon=0.0001):
         training_inputs, training_outputs = random.choice(network.training_sets)
         nn.train(training_inputs, training_outputs)
         total_error = nn.calculate_total_error(network.training_sets)
+        print('error = ', total_error)
 
     network_data = nn.inspect(network.training_sets)
     with open('network.json', 'w') as outfile:

@@ -50,6 +50,19 @@ class Images(Base):
     image_caption = Column(String, nullable=True)
     image_hash = Column(String, nullable=True)
 
+    def get_thematic_training_set(self):
+        super().open()
+        records = self.session.query(\
+                Images.album_id,\
+                Images.image_hash,\
+                Albums.album_id,\
+                Albums.album_type\
+            )\
+            .join(Albums, Albums.album_id == Images.album_id)\
+            .filter(Albums.album_type == 1).all()   
+        super().close()
+        return records
+
     def insert(self, image_info, image_hash):
         super().open()
         image = Images()        
@@ -75,9 +88,17 @@ class Images(Base):
     
     def get_failed_album_images(self):
         super().open()
-        records = query = self.session.query(Images).filter(Images.album_id == '-2481783').all()   
+        records = self.session.query(Images).filter(Images.album_id == '-2481783').all()   
         super().close()
         return records
+    
+    def get_albums(self):
+        super().open()
+        query = self.session.query(distinct(Images.album_id), Images.album_id)
+        records = query.all()
+        super().close()
+        return records
+
 
 
 class ImagesTags(Base):
@@ -92,34 +113,37 @@ class Tags(Base):
     tags_id = Column(Integer, primary_key=True)
     tag_name = Column(String, nullable=False)
 
+class Albums(Base):
+    __tablename__ = 'albums'
+    album_id = Column(Integer, primary_key=True)
+    album_type = Column(Integer, nullable=False, default=0)
+
+    # def insert(self, albums):
+    #     super().open()
+    #     for album in albums:
+    #         a = Albums()
+    #         a.album_id = album.album_id
+    #         self.session.add(a)
+    #         self.session.commit()
+    #     super().close()
+
+    def update(self, album_id, album_type):
+        super().open()
+        try:  
+            self.session.query(Albums).filter(Albums.album_id == album_id).update({
+                'album_type': album_type
+            })
+            self.session.commit()
+        except Exception as e:
+            print(e)
+        super().close()
+
+class AlbumsTags(Base):
+    __tablename__ = 'albums_tags'
+    albums_tags_id = Column(Integer, primary_key=True)
+    album_id = Column(Integer, ForeignKey('albums.album_id'), nullable=False)
+    tag_id = Column(Integer, ForeignKey('tags.tags_id'), nullable=False)
+
 # engine = db_connect() 
 # session_maker = sessionmaker()
-
 Base.metadata.create_all(engine)
-
-# engine = db_connect() 
-# session_maker = sessionmaker()
-# metadata = MetaData(engine)
-
-# images = Table('images', metadata,
-#     super_id = Column(Integer, primary_key=True),
-#     image_id = Column(Integer, nullable=False),
-#     owner_id = Column(Integer, default=settings.VK['owner_id'], nullable=False),
-#     album_id = Column(Integer, nullable=False),
-#     image_caption = Column(String, nullable=True),
-#     image_hash = Column(String, nullable=True),
-# )
-# images.create()
-
-# tags = Table('tags', metadata,
-#     tags_id = Column(Integer, primary_key=True),
-#     tag_name = Column(String, nullable=False),
-# )
-# tags.create()
-
-# images_tags = Table('images_tags', metadata,
-#     images_tags_id = Column(Integer, primary_key=True),
-#     image_id = Column(Integer, ForeignKey('images.id'), nullable=False),
-#     tag_id = Column(Integer, ForeignKey('tags.id'), nullable=False),
-# )
-# images_tags.create()
