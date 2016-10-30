@@ -1,40 +1,35 @@
 import json
 import urllib
 import sys
-def downloadImage(images, imgDir, imgInfoFile, isBig = True):
+import urllib
+
+from PIL import Image
+import requests
+from io import BytesIO
+
+try:
+    from .Similar import getImageHash
+    from . import models
+except Exception:
+    from Similar import getImageHash
+    import models
+
+def saveImageToDB(images_info, isBig = True):
     ''' Download images from vk.com 
         return images which not found in vk servers
     '''    
     size = -1 if isBig else 0
-    imgInfo = {
-        'img': {
-            
-        }
-    }
-    error404List = []
-    for index, image in enumerate(images):
+    
+    for image_info in images_info:
         try:
-            u = urllib.request.urlopen(image['sizes'][size]['src'])
-            raw_data = u.read()
-            u.close()
-            f = open(imgDir + str(index) + '.jpg','wb+')
-            f.write(raw_data)
-            f.close()
-            imgInfo['img'][index] = {
-                'id': image['id'],
-                'owner_id': image['owner_id'],
-                'album_id': image['album_id'],
-                'text': image['text']
-            }
+            response = requests.get(image_info['sizes'][size]['src'])
+            img = Image.open(BytesIO(response.content))    
+            img = img.convert(mode='RGB') 
+            hash = getImageHash(img)
+            models.Images().insert(image_info, hash)            
         except urllib.error.HTTPError as err:
-            print('https://vk.com/photo-2481783_' + str(image['id']))
-            error404List.append(str(image['id']))
+            print(err)
+            print('https://vk.com/photo-2481783_' + str(image_info['id']))
         except Exception as err:
-            print('https://vk.com/photo-2481783_' + str(image['id']))
-            sys.exit(err)
-
-    outfile = open(imgInfoFile, 'w')
-    json.dump(imgInfo, outfile, ensure_ascii=False, sort_keys=True, indent=4, separators=(',', ': '))
-    outfile.close()
-
-    return error404List
+            print(err)
+            print('https://vk.com/photo-2481783_' + str(image_info['id']))

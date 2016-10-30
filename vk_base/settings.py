@@ -15,12 +15,14 @@ VK = {
     'user_password': 'USER_PASSWORD', 
     'scope': 'photos, wall, groups, offline',
     'owner_id': 'OWNER_ID',
-    'isResume': False,
-    'resumeAlbumID': -1,
+    'isResume': True,
+    'resumeAlbumID': 49782714,
 }
-
 
 try:     
     from .local_settings import *
-except ImportError:
-    pass
+except Exception:
+    try:
+        from local_settings import *
+    except ImportError:
+        pass

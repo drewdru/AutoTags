@@ -1,13 +1,18 @@
+# -*- coding: utf-8 -*-
 import vk
 import json
 import os
 import time
 import sys
 
-from VKDownloadImage import downloadImage
-from Similar import getThumbnails, findSimilarImages
-
-import settings
+try:
+    from .VKDownloadImage import saveImageToDB
+    from .models import Images
+    from . import settings
+except Exception:
+    from VKDownloadImage import saveImageToDB
+    from models import Images
+    import settings
 
 def main():
     """Main entry point for the script."""
@@ -24,17 +29,18 @@ def main():
     OWNER_ID = settings.VK['owner_id']
     albums = api.photos.getAlbums(owner_id = OWNER_ID)
 
-    isResume = settings.VK['isResume']
-    resumeAlbumID = settings.VK['resumeAlbumID']
+    isResume = True
+    resumeAlbumID = 49782714
 
-    imgDir = './img/'
-    thumbDir = './thumb/'
-    thumbnailsSize = 32,32
-    imgInfoFile = './imgInfo.json'
-    deleteImgDir = './deleteImg/'
-    deleteImgInfoFile = './deleteImgInfo.json'
+    # imgDir = './img/'
+    # thumbDir = './thumb/'
+    # thumbnailsSize = 32,32
 
-    for index, album in enumerate(albums['items']):   
+    # imgInfoFile = './imgInfo.json'
+    # deleteImgDir = './deleteImg/'
+    # deleteImgInfoFile = './deleteImgInfo.json'
+
+    for album in albums['items']:   
         if isResume and album['id'] != resumeAlbumID:
             continue
         else:
@@ -42,7 +48,9 @@ def main():
         # get photos list from album['id']
         photos = api.photos.get(owner_id = OWNER_ID, 
             album_id = album['id'], 
-            photo_sizes='1')        
+            photo_sizes='1')   
+        print('Album: ', album)
+        saveImageToDB(photos['items'], isBig = False)
         
         
         # TODO save data to database
@@ -52,13 +60,13 @@ def main():
     #   проверить нейронкой два изображения 
     # pHash: https://habrahabr.ru/post/120562/  расстояния Хэмминга заменить на нейронную сеть
 
-    """"
+    """
     адаптивная бинаризация -> выделение контуров -> вычисление дескрипторов фурье, сравнение дескрипторов.
     плюсы: не зависит от разрешения, качества сжатия, изменений цветовой палитры, небольших артефактов, можно применять к кропнутым вариантам картинки.
     кроме того, картинки вида «хотеть — не хотеть» будут в различных кластерах.
     при небольшой адаптации может правильно учитывать повернутые изображения.
     минусы: дескрипторы нельзя сравнивать побитно, придется каждый раз считать свертку для всех пар картинок (O(n^2)).
-    """"
+    """
     # Дескриптор фурье:
     #https://cyberleninka.ru/article/n/algoritmicheskoe-i-programmnoe-obespechenie-dlya-raspoznavaniya-figur-s-pomoschyu-furie-deskriptorov-i-neyronnoy-seti
 
