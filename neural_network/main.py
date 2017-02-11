@@ -6,8 +6,8 @@ import random
 
 class NetworkInfo:
     num_inputs = 64
-    num_hidden = 5
-    num_outputs = 1
+    num_hidden = 4
+    num_outputs = 10
 
     hidden_layer_weights = None
     hidden_layer_bias = None
@@ -28,27 +28,36 @@ class NetworkInfo:
         #     [[1, 1], [0]]
         # ]
         self.get_training_sets()
-        print(self.training_sets)
+        # print(self.training_sets)
         self.get_network_from_file(is_train)
     
     def get_training_sets(self):
         records = models.Images().get_thematic_training_set()
         print(len(records))
         for index, record in enumerate(records):
-            # if index == 10:
+            # if index == 1000:
             #     break
             row = []
             hash_array = []
             for hash in record.image_hash:
                 hash_array.append(int(hash))
             row.append(hash_array)
-            row.append([1/record.album_id])
+
+            album_super_id_array = []
+            album_super_id_bin = bin(record.super_id).replace('0b', '')
+            tmp = ''
+            for value in range(10 - len(album_super_id_bin)):
+                tmp += '0'
+            album_super_id_bin = tmp + album_super_id_bin
+            for value in album_super_id_bin:
+                album_super_id_array.append(int(value))
+            row.append(album_super_id_array)
             self.training_sets.append(row)
 
     def get_network_from_file(self, is_train=False):
         network = None
         try:
-            with open('network.json') as json_data:
+            with open('network5.json') as json_data:
                 network = json.load(json_data)
         except FileNotFoundError as error:
             if not is_train:
@@ -70,12 +79,10 @@ class NetworkInfo:
                 self.output_layer_bias.append(neuron['bias'])
                 for weight in neuron['weights']:
                     self.output_layer_weights.append(weight)
-            
             self.total_error = network['total_error']
 
-def train(epsilon=0.0001):
-    network = NetworkInfo(is_train=True)
-    print('networ is get')
+def train(epsilon=0.001):
+    network = NetworkInfo(is_train=True)    
     nn = neural_network.NeuralNetwork(
         num_inputs = network.num_inputs, 
         num_hidden = network.num_hidden, 
@@ -85,15 +92,42 @@ def train(epsilon=0.0001):
         output_layer_weights = network.output_layer_weights, 
         output_layer_bias = network.output_layer_bias,
     )
+    print('networ is get')
     total_error = network.total_error
+    count = 0
     while total_error > epsilon:
-        training_inputs, training_outputs = random.choice(network.training_sets)
-        nn.train(training_inputs, training_outputs)
-        total_error = nn.calculate_total_error(network.training_sets)
-        print('error = ', total_error)
+        try:
+            training_inputs, training_outputs = random.choice(network.training_sets)
+            # for rang in range(random.randint(100,500)):
+            #     nn.train(training_inputs, training_outputs) 
+            outputs = nn.feed_forward(network.training_sets[0][0])
+            for i in range(len(outputs)):
+                outputs[i] = round(outputs[i])
+
+            while outputs != training_outputs:
+                nn.train(training_inputs, training_outputs)
+                outputs = nn.feed_forward(network.training_sets[0][0])
+                for i in range(len(outputs)):
+                    outputs[i] = round(outputs[i])
+
+            if count == 100:
+                print(outputs, training_outputs)
+                total_error = nn.calculate_total_error(network.training_sets)
+                print('error = ', total_error)
+                network_data = nn.inspect(network.training_sets)
+                with open('network5.json', 'w') as outfile:
+                    json.dump(network_data, outfile)
+                count = 0
+            else:
+                count += 1
+        except Exception as e:
+            print(e)
+            network_data = nn.inspect(network.training_sets)
+            with open('network5.json', 'w') as outfile:
+                json.dump(network_data, outfile)
 
     network_data = nn.inspect(network.training_sets)
-    with open('network.json', 'w') as outfile:
+    with open('network5.json', 'w') as outfile:
         json.dump(network_data, outfile)
     print(json.dumps(network_data, sort_keys=True, indent=4, separators=(',', ': ')))
     print(nn.feed_forward(network.training_sets[0][0]))
@@ -114,7 +148,16 @@ def main():
     )
     network_data = nn.inspect(network.training_sets)
     print(json.dumps(network_data, sort_keys=True, indent=4, separators=(',', ': ')))
-    print(nn.feed_forward(network.training_sets[0][0]))
+    print(network.training_sets[0])
+    array_id = nn.feed_forward(network.training_sets[0][0])
+    str_array_id = ''
+    for id in array_id:
+        str_array_id += str(round(id))
+    album_super_id = int(str_array_id, 2)    
+    print('super_id', album_super_id)
+    album_id_record = models.Albums().get_by_super_id(album_super_id)
+    if album_id_record is not None:
+        print('album_id', album_id_record.album_id) 
 
 def help():
     print('Usage: python main.py [-h] [-t]')

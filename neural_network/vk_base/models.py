@@ -56,10 +56,12 @@ class Images(Base):
                 Images.album_id,\
                 Images.image_hash,\
                 Albums.album_id,\
-                Albums.album_type\
+                Albums.album_type,\
+                Albums.super_id\
             )\
             .join(Albums, Albums.album_id == Images.album_id)\
-            .filter(Albums.album_type == 1).all()   
+            .filter(Albums.album_type == 1)\
+            .all()   
         super().close()
         return records
 
@@ -115,8 +117,15 @@ class Tags(Base):
 
 class Albums(Base):
     __tablename__ = 'albums'
+    super_id = Column(Integer, primary_key=True)
     album_id = Column(Integer, primary_key=True)
     album_type = Column(Integer, nullable=False, default=0)
+
+    def get_by_super_id(self, super_id):        
+        super().open()
+        records = self.session.query(Albums).filter(Albums.super_id == super_id).first()   
+        super().close()
+        return records
 
     # def insert(self, albums):
     #     super().open()

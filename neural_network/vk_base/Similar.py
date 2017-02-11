@@ -62,7 +62,7 @@ def DCT(img, size):
         get: image, width=size[0], height=size[1]
         return: upper left 8x8 block of DCTMatrix
     '''
-    
+
     DCTMatrix = [[0 for x in range(size[0])] for y in range(size[1])] 
     for u in range(size[0]):
         for v in range(size[1]):
