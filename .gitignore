@@ -1,6 +1,6 @@
-vk_base/img/*
-vk_base/thumb/*
-vk_base/deleteImg/*
+**/vk_base/img/*
+**/vk_base/thumb/*
+**/vk_base/deleteImg/*
 
 .vscode/*
 __pycache__/*
@@ -10,6 +10,7 @@ local_*
 .vscode/
 *.txt
 *.json
+*.db
 __pycache__/
 *.py[cod]
 *$py.class
