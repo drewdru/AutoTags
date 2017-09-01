@@ -1,0 +1,11 @@
+ToTest/*
+autumn/*
+cat
+network-test1.json
+spring/*
+summer/*
+winter/*
+.vscode/*
+__pycache__/*
+local_*
+env/

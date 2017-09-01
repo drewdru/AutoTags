@@ -2,6 +2,7 @@
 # MIT © [Matt Mazur](http://mattmazur.com)
 import random
 import math
+import json
 
 #
 # Shorthand:
@@ -51,16 +52,14 @@ class NeuralNetwork:
                     self.output_layer.neurons[o].weights.append(output_layer_weights[weight_num])
                 weight_num += 1
 
-    def inspect(self):
-        print('------')
-        print('* Inputs: {}'.format(self.num_inputs))
-        print('------')
-        print('Hidden Layer')
-        self.hidden_layer.inspect()
-        print('------')
-        print('* Output Layer')
-        self.output_layer.inspect()
-        print('------')
+    def inspect(self, training_sets):
+        inspect = {
+            'count': self.num_inputs,
+            'hidden_layer': self.hidden_layer.inspect(),
+            'output_layer': self.output_layer.inspect(),
+            'total_error': self.calculate_total_error(training_sets),
+        }
+        return inspect
 
     def feed_forward(self, inputs):
         hidden_layer_outputs = self.hidden_layer.feed_forward(inputs)
@@ -122,20 +121,25 @@ class NeuralNetwork:
 class NeuronLayer:
     def __init__(self, num_neurons, bias):
 
-        # Every neuron in a layer shares the same bias
-        self.bias = bias if bias else random.random()
-
+        # Every neuron in a layer shares the same bias        
         self.neurons = []
-        for i in range(num_neurons):
+        for index, i in enumerate(range(num_neurons)):
+            self.bias = bias[index] if bias else random.random()
             self.neurons.append(Neuron(self.bias))
 
     def inspect(self):
-        print('Neurons:', len(self.neurons))
-        for n in range(len(self.neurons)):
-            print(' Neuron', n)
-            for w in range(len(self.neurons[n].weights)):
-                print('  Weight:', self.neurons[n].weights[w])
-            print('  Bias:', self.bias)
+        inspect = {
+            'count_neurons': len(self.neurons),
+            'neurons': [],
+        }
+        for index, n in enumerate(range(len(self.neurons))):
+            inspect['neurons'].append({
+                'weights': [],
+                'bias': self.bias
+            })
+            for index2, w in enumerate(range(len(self.neurons[n].weights))):
+                inspect['neurons'][index]['weights'].append(self.neurons[n].weights[w])
+        return inspect
 
     def feed_forward(self, inputs):
         outputs = []
@@ -220,10 +224,10 @@ class Neuron:
 
 # Blog post example:
 
-nn = NeuralNetwork(2, 2, 2, hidden_layer_weights=[0.15, 0.2, 0.25, 0.3], hidden_layer_bias=0.35, output_layer_weights=[0.4, 0.45, 0.5, 0.55], output_layer_bias=0.6)
-for i in range(10000):
-    nn.train([0.05, 0.1], [0.01, 0.99])
-    print(i, round(nn.calculate_total_error([[[0.05, 0.1], [0.01, 0.99]]]), 9))
+# nn = NeuralNetwork(2, 2, 2, hidden_layer_weights=[0.15, 0.2, 0.25, 0.3], hidden_layer_bias=0.35, output_layer_weights=[0.4, 0.45, 0.5, 0.55], output_layer_bias=0.6)
+# for i in range(10000):
+#     nn.train([0.05, 0.1], [0.01, 0.99])
+#     print(i, round(nn.calculate_total_error([[[0.05, 0.1], [0.01, 0.99]]]), 9))
 
 # XOR example:
 
