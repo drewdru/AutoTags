@@ -25,8 +25,8 @@ def saveImageToDB(images_info, isBig = True):
             response = requests.get(image_info['sizes'][size]['src'])
             img = Image.open(BytesIO(response.content))    
             img = img.convert(mode='RGB') 
-            hash = getImageHash(img)
-            models.Images().insert(image_info, hash)            
+            img_hash = getImageHash(img)
+            models.Images().insert(image_info, img_hash)            
         except urllib.error.HTTPError as err:
             print(err)
             print('https://vk.com/photo-2481783_' + str(image_info['id']))

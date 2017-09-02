@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, DateTime, types, distinct
 from sqlalchemy import Table, text, MetaData, Column, Integer, or_
 from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint
+from sqlalchemy.schema import PrimaryKeyConstraint, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.ext.declarative import as_declarative
 # from sqlalchemy import *
 try:
@@ -16,10 +16,10 @@ def db_connect():
     """     
     Performs database connection using database settings from settings.py.
     Returns sqlalchemy engine instance     
-    """     
+    """
     # return create_engine('sqlite:///images.db', echo=True)
     return create_engine('{drivername}://{username}:{password}@{host}:{port}/{database}'\
-        .format(**settings.DATABASES['sqlalchemy'])     
+        .format(**settings.DATABASES['sqlalchemy'])
     ) 
 
 engine = db_connect() 
@@ -117,9 +117,12 @@ class Tags(Base):
 
 class Albums(Base):
     __tablename__ = 'albums'
-    super_id = Column(Integer, primary_key=True)
+    super_id = Column(Integer, default=0)
     album_id = Column(Integer, primary_key=True)
     album_type = Column(Integer, nullable=False, default=0)
+    __table_args__ = (
+        UniqueConstraint('super_id'),
+    )
 
     def get_by_super_id(self, super_id):        
         super().open()
