@@ -7,11 +7,11 @@ import sys
 
 try:
     from .VKDownloadImage import saveImageToDB
-    from .models import Images
+    from .models.images import Images
     from . import settings
 except Exception:
     from VKDownloadImage import saveImageToDB
-    from models import Images
+    from models.images import Images
     import settings
 
 def getVkApi():
@@ -44,20 +44,8 @@ def findNewAlbums(albums):
             print(album['id'])
     return isFindedNewAlbums
 
-def main():
-    """ Main entry point for the script """
-    OWNER_ID = settings.VK['owner_id']
-    vkApi = getVkApi()
-
-    isResume = False
-    resumeAlbumID = 49782714
-    albums = vkApi.photos.getAlbums(owner_id=OWNER_ID)
-
-    if findNewAlbums(albums['items']):
-        print('New albums are found, please add them to the database')
-        return
-
-    for album in albums['items']:   
+def getVkImages(vkApi, albums, OWNER_ID, isResume=False, resumeAlbumID=0):
+    for album in albums:   
         if isResume and album['id'] != resumeAlbumID:
             continue
         else:
@@ -68,6 +56,18 @@ def main():
             photo_sizes='1')   
         print('Album: ', album)
         saveImageToDB(photos['items'], isBig = False)
+
+def main():
+    """ Main entry point for the script """
+    OWNER_ID = settings.VK['owner_id']
+    vkApi = getVkApi()
+    albums = vkApi.photos.getAlbums(owner_id=OWNER_ID)
+
+    if findNewAlbums(albums['items']):
+        print('New albums are found, please add them to the database')
+        return
+    getVkImages(vkApi, albums['items'], OWNER_ID)
+
 # TODO: UPDATE next TODO (Кластеризация изображения, кластеризация объектов на изображениях, классификация)
 """ TODO:
 адаптивная бинаризация -> выделение контуров -> вычисление дескрипторов фурье, сравнение дескрипторов.
