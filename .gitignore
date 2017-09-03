@@ -9,6 +9,7 @@ local_*
 
 .vscode/
 *.txt
+*.pdf
 *.json
 *.db
 __pycache__/

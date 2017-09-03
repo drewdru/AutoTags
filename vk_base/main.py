@@ -14,31 +14,48 @@ except Exception:
     from models import Images
     import settings
 
-def main():
-    """Main entry point for the script."""
+def getVkApi():
+    """ Get vk api with access_token """
     # get access_token to vk api
-    vkSession = vk.AuthSession(app_id = settings.VK['app_id'], 
-        user_login = settings.VK['user_login'], 
-        user_password = settings.VK['user_password'], 
-        scope = settings.VK['scope']
-    )
-    api = vk.API(vkSession, v='5.53', timeout=999999999)
-    print('api is connected')
+    vkSession = vk.AuthSession(app_id=settings.VK['app_id'],
+        user_login=settings.VK['user_login'],
+        user_password=settings.VK['user_password'],
+        scope=settings.VK['scope'])
+    print('Connection with vk. Stand by ...')
+    vkApi = vk.API(vkSession, v='5.53', timeout=999999999)
+    print('VK api is connected')
+    return vkApi
 
-    # get albums list
+def findNewAlbums(albums):
+    """ Find new albums 
+        :param dict albums: All owners albums
+    """
+    allAlbums = []
+    albumsTypeDir = './albums_type/'
+    albumsTypeList = os.listdir(albumsTypeDir)
+    for albumsType in albumsTypeList:
+        with open(albumsTypeDir + albumsType) as f:
+            for line in f:
+                allAlbums.append(int(line))
+    isFindedNewAlbums = False
+    for album in albums:
+        if album['id'] not in allAlbums:
+            isFindedNewAlbums = True
+            print(album['id'])
+    return isFindedNewAlbums
+
+def main():
+    """ Main entry point for the script """
     OWNER_ID = settings.VK['owner_id']
-    albums = api.photos.getAlbums(owner_id = OWNER_ID)
+    vkApi = getVkApi()
 
-    isResume = True
+    isResume = False
     resumeAlbumID = 49782714
+    albums = vkApi.photos.getAlbums(owner_id=OWNER_ID)
 
-    # imgDir = './img/'
-    # thumbDir = './thumb/'
-    # thumbnailsSize = 32,32
-
-    # imgInfoFile = './imgInfo.json'
-    # deleteImgDir = './deleteImg/'
-    # deleteImgInfoFile = './deleteImgInfo.json'
+    if findNewAlbums(albums['items']):
+        print('New albums are found, please add them to the database')
+        return
 
     for album in albums['items']:   
         if isResume and album['id'] != resumeAlbumID:
@@ -46,7 +63,7 @@ def main():
         else:
             isResume = False  
         # get photos list from album['id']
-        photos = api.photos.get(owner_id = OWNER_ID, 
+        photos = vkApi.photos.get(owner_id = OWNER_ID, 
             album_id = album['id'], 
             photo_sizes='1')   
         print('Album: ', album)
